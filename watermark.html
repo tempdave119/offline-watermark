@@ -1,0 +1,841 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"/>
+    <title>水印工具</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 4px 10px;
+            background: #f0f2f5;
+        }
+
+        #container {
+            max-width: 1200px;
+            margin: 25px auto;
+            padding: 10px 28px 29px 28px;
+            background: #fff;
+            border-radius: 12px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+        }
+
+        h1 {
+            margin: 0 0 5px 0;
+            font-size: 22px;
+        }
+
+        #graph {
+            display: grid;
+            grid-gap: 15px;
+            grid-template-columns: 1fr 1fr;
+            margin-top: 10px;
+        }
+
+        p,
+        article {
+            margin: 0 0 20px 0
+        }
+
+        article {
+            font-size: 14px;
+            color: #777;
+            background: #f7f8fa;
+            padding: 12px 16px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+        }
+
+        .align-center-box {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        label {
+            color: blue;
+            font-size: 17px;
+            margin-right: 10px;
+        }
+
+        p label {
+            color: black;
+            display: inline-block;
+            font-size: 15px
+        }
+
+        input[type=range] {
+            min-width: 200px;
+            height: 18px;
+            vertical-align: text-bottom;
+            flex: 1;
+        }
+
+        input[type=file] {
+            padding: 4px 8px;
+            font-size: 13px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            background: #fafafa;
+        }
+
+        .preview-wrapper {
+            position: relative;
+            display: inline-block;
+        }
+
+        .preview-wrapper canvas {
+            box-sizing: border-box;
+            width: 100%;
+            border: 1px dashed #AAA;
+            border-radius: 8px;
+            cursor: pointer
+        }
+
+        .remove-img-btn {
+            position: absolute;
+            top: 6px;
+            right: 6px;
+            width: 24px;
+            height: 24px;
+            border: none;
+            border-radius: 50%;
+            background: rgba(0,0,0,0.5);
+            color: #fff;
+            font-size: 14px;
+            line-height: 24px;
+            text-align: center;
+            cursor: pointer;
+            z-index: 10;
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+
+        .preview-wrapper:hover .remove-img-btn {
+            opacity: 1;
+        }
+
+        .remove-img-btn:hover {
+            background: #e74c3c;
+        }
+
+        .label {
+            margin-right: 30px;
+        }
+
+        /* ===== 水印条目卡片样式 ===== */
+
+        #watermark-list {
+            margin-bottom: 13px;
+        }
+
+        .watermark-entry {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+            margin-bottom: 15px;
+            padding: 12px 14px;
+            background: #f7f8fa;
+            border-radius: 8px;
+            border: 1px solid #e0e0e0;
+        }
+
+        .wm-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .wm-row .wm-label {
+            color: #666;
+            font-size: 13px;
+            white-space: nowrap;
+            margin-right: 0;
+        }
+
+        .wm-row .wm-index {
+            color: #aaa;
+            font-size: 13px;
+            font-weight: bold;
+            min-width: 22px;
+        }
+
+        .wm-row .wm-text {
+            flex: 1;
+            min-width: 140px;
+            font-size: 14px;
+            padding: 5px 8px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            outline: none;
+            transition: border-color 0.2s;
+            box-sizing: border-box;
+        }
+
+        .wm-row .wm-text:focus {
+            border-color: #4a90d9;
+        }
+
+        .wm-row .wm-color {
+            width: 32px;
+            height: 32px;
+            border: 2px solid #ddd;
+            border-radius: 4px;
+            cursor: pointer;
+            padding: 0;
+            flex-shrink: 0;
+        }
+
+        .wm-row input[type="range"] {
+            min-width: 0;
+            width: 80px;
+            flex: 0 0 80px;
+            height: 16px;
+        }
+
+        .wm-row .wm-val {
+            min-width: 30px;
+            font-size: 12px;
+            color: #888;
+            text-align: center;
+        }
+
+        .wm-row .wm-num {
+            width: 52px;
+            font-size: 12px;
+            padding: 2px 4px;
+            border: 1px solid #ccc;
+            border-radius: 3px;
+            text-align: center;
+            outline: none;
+            box-sizing: border-box;
+        }
+
+        .wm-row .wm-num:focus {
+            border-color: #4a90d9;
+        }
+
+        .wm-row select {
+            font-size: 13px;
+            padding: 3px 4px;
+            border: 1px solid #ccc;
+            border-radius: 3px;
+            max-width: 130px;
+        }
+
+        .wm-row input[type="checkbox"] {
+            margin: 0 2px 0 6px;
+        }
+
+        .wm-delete-btn {
+            background: #e74c3c;
+            color: white;
+            border: none;
+            padding: 5px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 13px;
+            white-space: nowrap;
+            transition: background 0.2s;
+            flex-shrink: 0;
+        }
+
+        .wm-delete-btn:hover {
+            background: #c0392b;
+        }
+
+        .wm-delete-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
+        #add-watermark {
+            background: #4a90d9;
+            color: white;
+            border: none;
+            padding: 5px 14px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+            transition: background 0.2s;
+        }
+
+        #add-watermark:hover {
+            background: #357abd;
+        }
+
+        .section-title {
+            font-size: 16px;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 13px;
+            display: block;
+        }
+    </style>
+</head>
+<body>
+<div id="container">
+    <h1>水印工具</h1>
+    <article>
+        安全地为你的图片加水印，无任何网络请求，适合于各种敏感证件等，支持多水印叠加。
+    </article>
+
+    <div class="align-center-box">
+        <label for="image">第一步：先选择本地图片(可多选)</label>
+        <input type="file" id="image" autocomplete="off" multiple>
+    </div>
+
+    <!-- 第二步：水印配置（每个水印独立控制所有参数） -->
+    <div style="margin-bottom: 15px;">
+        <span class="section-title">第二步：配置水印（每个水印独立控制）</span>
+        <div id="watermark-list"></div>
+        <button id="add-watermark">+ 添加水印</button>
+    </div>
+
+    <!-- 下载设置（全局） -->
+    <div>
+        <label>第三步：点击图片进行单个图片下载</label>
+        <button onclick="downloadAllPic()">下载全部</button>
+        <label>
+            PNG格式
+            <input type="radio" value="image/png" name="pic-type" class="pic-type" checked>
+        </label>
+        <label>
+            JPEG格式
+            <input type="radio" value="image/jpeg" name="pic-type" class="pic-type">
+        </label>
+        <label>
+            Webp格式
+            <input type="radio" value="image/webp" name="pic-type" class="pic-type">
+        </label>
+
+        <span id="pic-quality-div" style="display: none">
+            <label for="pic-quality">图像质量</label>
+            <input type="range" id="pic-quality" min="1" max="100" step="1" autocomplete="off" value="92">
+            <label class="label" id="label-pic-quality"></label>
+        </span>
+    </div>
+
+    <p id="graph"></p>
+</div>
+
+<script>
+    (function () {
+        let $ = sel => document.querySelector(sel);
+        let allCanvas = [];
+        let watermarkIdCounter = 1;
+        let watermarks = [];
+        let picType = 'image/png';
+
+        // ---- 字体列表 ----
+
+        const fontOptions = ["Arial", "Helvetica", "Times New Roman", "Courier New", "Verdana", "Georgia", "Impact", "Tahoma", "Palatino", "Garamond", "Bookman", "Comic Sans MS", "Century Gothic", "Arial Black", "Lucida Console",
+            "幼圆", "新宋体", "文泉驿微米黑", "微软正黑体", "微软雅黑", "宋体", "思源宋体", "思源黑体", "苹方", "隶书", "楷体", "开源字体", "华文中宋", "华文行楷", "华文新魏", "华文细黑", "华文宋体", "华文隶书", "华文楷体", "华文琥珀", "华文黑体", "华文仿宋", "华文彩云", "黑体", "汉仪雅酷黑W", "汉仪小麦体", "汉仪尚魏手书W", "汉仪旗黑", "汉仪乐喵体简", "汉仪楷体", "汉仪家书简", "汉仪黑荔枝", "汉仪大宋简", "汉仪大黑简", "汉仪程行体", "汉仪PP体简", "仿宋"];
+
+        function getFontOptionsHtml(selected) {
+            return fontOptions.map(function (f) {
+                return '<option value="' + f + '"' + (f === selected ? ' selected' : '') + ' style="font-family:' + f + '">' + f + '</option>';
+            }).join('');
+        }
+
+        // ---- 水印数据模型 ----
+
+        function createWatermark(defaults) {
+            if (!defaults) defaults = {};
+            return {
+                id: watermarkIdCounter++,
+                text: defaults.text || '',
+                color: defaults.color || '#666666',
+                alpha: defaults.alpha !== undefined ? defaults.alpha : 0.25,
+                font: defaults.font || 'Arial',
+                bold: defaults.bold !== undefined ? defaults.bold : true,
+                italic: defaults.italic !== undefined ? defaults.italic : false,
+                xx: defaults.xx !== undefined ? defaults.xx : false,
+                size: defaults.size !== undefined ? defaults.size : 0.8,
+                radio: defaults.radio !== undefined ? defaults.radio : -30,
+                marginHorizon: defaults.marginHorizon !== undefined ? defaults.marginHorizon : 3,
+                marginVertical: defaults.marginVertical !== undefined ? defaults.marginVertical : 3
+            };
+        }
+
+        // ---- 工具函数 ----
+
+        function escapeHtml(str) {
+            var div = document.createElement('div');
+            div.textContent = str;
+            return div.innerHTML;
+        }
+
+        function fmt(n) {
+            return isNaN(n) ? n : parseFloat(n).toFixed(1);
+        }
+
+        var dataURItoBlob = function (dataURI, type) {
+            var i, _i, _ref;
+            var binStr = atob((dataURI.split(','))[1]);
+            var len = binStr.length;
+            var arr = new Uint8Array(len);
+            for (i = _i = 0, _ref = len - 1; 0 <= _ref ? _i <= _ref : _i >= _ref; i = 0 <= _ref ? ++_i : --_i) {
+                arr[i] = binStr.charCodeAt(i);
+            }
+            return new Blob([arr], { type: type });
+        };
+
+        // ---- Canvas 操作 ----
+
+        var redrawCanvas = function (canvas, img) {
+            var w = canvas.width;
+            var h = canvas.height;
+            canvas.width = w;
+            canvas.height = h;
+            canvas.getContext('2d').drawImage(img, 0, 0);
+        };
+
+        var downloadCanvasAsImage = function (canvas, fileName) {
+            var type = picType;
+            var link = document.createElement('a');
+            link.download = fileName + "_watermark." + type.split("/")[1];
+            var imageData = canvas.toDataURL(type, parseFloat($("#pic-quality").value) / 100);
+            var blob = dataURItoBlob(imageData, type);
+            link.href = URL.createObjectURL(blob);
+            document.getElementById('graph').appendChild(link);
+            return setTimeout(function () {
+                link.click();
+                return document.getElementById('graph').removeChild(link);
+            }, 10);
+        };
+
+        var downloadAllPic = function () {
+            allCanvas.forEach(function (item) {
+                downloadCanvasAsImage(item.canvas, item.fileName);
+            });
+        };
+
+        // ---- 水印绘制 ----
+
+        var makeStyle = function (wm) {
+            var match = wm.color.match(/^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i);
+            if (!match) return 'rgba(0,0,0,' + wm.alpha + ')';
+            return 'rgba(' + parseInt(match[1], 16) + ',' + parseInt(match[2], 16) + ',' + parseInt(match[3], 16) + ',' + wm.alpha + ')';
+        };
+
+        var drawText = function (canvas, img) {
+            redrawCanvas(canvas, img);
+            if (canvas == null) return;
+
+            watermarks.forEach(function (wm) {
+                if (!wm.text || wm.text.trim() === '') return;
+
+                var textSize = wm.size * Math.max(15, Math.min(canvas.width, canvas.height) / 25);
+                var textCtx = canvas.getContext('2d');
+                textCtx.fillStyle = makeStyle(wm);
+
+                textCtx.font =
+                    (wm.bold ? "bold " : "") +
+                    (wm.italic ? "italic " : "") +
+                    textSize + "px " + wm.font;
+
+                var baseWidth = textCtx.measureText('啊').width;
+                var textWidth = textCtx.measureText(wm.text).width;
+                var xAdd = textWidth + wm.marginHorizon * baseWidth;
+                var yAdd = textWidth + wm.marginVertical * baseWidth;
+                xAdd = Math.max(xAdd, 10);
+                yAdd = Math.max(yAdd, 10);
+
+                var border = 500;
+                for (var i = -1 * border; i < canvas.width + border; i += xAdd) {
+                    for (var j = -1 * border, jj = 0; j < canvas.height + border; j += yAdd, jj++) {
+                        textCtx.save();
+                        textCtx.translate(
+                            i + Math.ceil(jj % 2 === 0 ? xAdd / (wm.xx ? 2 : 1) : 0),
+                            j
+                        );
+                        textCtx.rotate(wm.radio * Math.PI / 180);
+                        textCtx.fillText(wm.text, 0, 0);
+                        textCtx.restore();
+                    }
+                }
+            });
+        };
+
+        // ---- 图片读取 ----
+
+        var readFile = function (file) {
+            if (file == null) return;
+            var fileReader = new FileReader();
+            fileReader.onload = function () {
+                var img = new Image();
+                img.onload = function () {
+                    var canvas = document.createElement('canvas');
+                    canvas.width = img.width;
+                    canvas.height = img.height;
+                    var ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0);
+
+                    // 创建预览容器
+                    var wrapper = document.createElement('div');
+                    wrapper.className = 'preview-wrapper';
+
+                    // 删除按钮
+                    var removeBtn = document.createElement('button');
+                    removeBtn.className = 'remove-img-btn';
+                    removeBtn.textContent = '×';
+                    removeBtn.title = '移除这张图片';
+
+                    wrapper.appendChild(removeBtn);
+                    wrapper.appendChild(canvas);
+
+                    var item = { img: img, canvas: canvas, fileName: file.name, wrapper: wrapper };
+                    allCanvas.push(item);
+
+                    drawText(canvas, img);
+                    document.getElementById('graph').appendChild(wrapper);
+
+                    // 删除按钮事件
+                    removeBtn.addEventListener('click', function (e) {
+                        e.stopPropagation();
+                        removeImage(item);
+                    });
+
+                    // 点击 canvas 下载
+                    return canvas.addEventListener('click', function () {
+                        downloadCanvasAsImage(canvas, file.name);
+                    });
+                };
+                return img.src = fileReader.result;
+            };
+            return fileReader.readAsDataURL(file);
+        };
+
+        function removeImage(item) {
+            var index = allCanvas.indexOf(item);
+            if (index > -1) {
+                allCanvas.splice(index, 1);
+            }
+            if (item.wrapper && item.wrapper.parentNode) {
+                item.wrapper.parentNode.removeChild(item.wrapper);
+            }
+        }
+
+        // ---- 重绘辅助 ----
+
+        function redrawAll() {
+            allCanvas.forEach(function (item) {
+                drawText(item.canvas, item.img);
+            });
+        }
+
+        // ---- 水印条目渲染 ----
+
+        function updateDeleteButtons() {
+            var deleteBtns = document.querySelectorAll('.wm-delete-btn');
+            var disable = watermarks.length <= 1;
+            deleteBtns.forEach(function (btn) { btn.disabled = disable; });
+        }
+
+        function refreshWatermarkIndices() {
+            watermarks.forEach(function (wm, i) {
+                if (wm._el && wm._el.indexSpan) {
+                    wm._el.indexSpan.textContent = '#' + (i + 1);
+                }
+            });
+        }
+
+        function removeWatermark(id) {
+            if (watermarks.length <= 1) return;
+            var index = watermarks.findIndex(function (w) { return w.id === id; });
+            if (index > -1) {
+                var removed = watermarks.splice(index, 1)[0];
+                if (removed._el && removed._el.entryDiv) {
+                    removed._el.entryDiv.remove();
+                }
+            }
+            updateDeleteButtons();
+            refreshWatermarkIndices();
+            redrawAll();
+        }
+
+        function addWatermark() {
+            var src = watermarks[0];
+            var wm = createWatermark({
+                text: src.text,
+                color: '#FF4444',
+                alpha: src.alpha,
+                font: src.font,
+                bold: src.bold,
+                italic: src.italic,
+                xx: src.xx,
+                size: src.size,
+                radio: src.radio,
+                marginHorizon: src.marginHorizon,
+                marginVertical: src.marginVertical
+            });
+            watermarks.push(wm);
+            renderWatermarkEntry(wm);
+            updateDeleteButtons();
+            redrawAll();
+        }
+
+        function renderWatermarkEntry(wm) {
+            var container = document.getElementById('watermark-list');
+            var idx = watermarks.indexOf(wm) + 1;
+
+            var entryDiv = document.createElement('div');
+            entryDiv.className = 'watermark-entry';
+            entryDiv.id = 'wm-entry-' + wm.id;
+
+            entryDiv.innerHTML =
+                // 第1行：序号 + 文字 + 颜色 + 不透明度 + 删除
+                '<div class="wm-row">' +
+                '<span class="wm-index">#' + idx + '</span>' +
+                '<input type="text" class="wm-text" value="' + escapeHtml(wm.text) + '" placeholder="输入水印文字">' +
+                '<input type="color" class="wm-color" value="' + wm.color + '">' +
+                '<span class="wm-label">不透明度</span>' +
+                '<input type="range" class="wm-alpha" min="0" max="1" step="0.01" value="' + wm.alpha + '">' +
+                '<input type="number" class="wm-num wm-alpha-num" min="0" max="1" step="0.01" value="' + wm.alpha + '">' +
+                '<button class="wm-delete-btn"' + (watermarks.length <= 1 ? ' disabled' : '') + '>删除</button>' +
+                '</div>' +
+
+                // 第2行：字体 + 加粗 + 斜体 + 交错 + 字号
+                '<div class="wm-row">' +
+                '<span class="wm-label">字体</span>' +
+                '<select class="wm-font">' + getFontOptionsHtml(wm.font) + '</select>' +
+                '<input type="checkbox" class="wm-bold"' + (wm.bold ? ' checked' : '') + '><span class="wm-label">加粗</span>' +
+                '<input type="checkbox" class="wm-italic"' + (wm.italic ? ' checked' : '') + '><span class="wm-label">斜体</span>' +
+                '<input type="checkbox" class="wm-xx"' + (wm.xx ? ' checked' : '') + '><span class="wm-label">交错</span>' +
+                '<span class="wm-label">字号</span>' +
+                '<input type="range" class="wm-size" min="0.1" max="5" step="0.01" value="' + wm.size + '">' +
+                '<input type="number" class="wm-num wm-size-num" min="0.1" max="5" step="0.01" value="' + wm.size + '">' +
+                '</div>' +
+
+                // 第3行：角度 + 左右间隔 + 上下间隔
+                '<div class="wm-row">' +
+                '<span class="wm-label">角度</span>' +
+                '<input type="range" class="wm-radio" min="-180" max="180" step="1" value="' + wm.radio + '">' +
+                '<input type="number" class="wm-num wm-radio-num" min="-180" max="180" step="1" value="' + wm.radio + '">' +
+                '<span class="wm-label">左右间隔</span>' +
+                '<input type="range" class="wm-marginHorizon" min="-5" max="12" step="0.1" value="' + wm.marginHorizon + '">' +
+                '<input type="number" class="wm-num wm-marginHorizon-num" min="-5" max="12" step="0.1" value="' + wm.marginHorizon + '">' +
+                '<span class="wm-label">上下间隔</span>' +
+                '<input type="range" class="wm-marginVertical" min="-5" max="12" step="0.1" value="' + wm.marginVertical + '">' +
+                '<input type="number" class="wm-num wm-marginVertical-num" min="-5" max="12" step="0.1" value="' + wm.marginVertical + '">' +
+                '</div>';
+
+            container.appendChild(entryDiv);
+
+            // 缓存所有 DOM 引用
+            var els = {
+                entryDiv: entryDiv,
+                indexSpan: entryDiv.querySelector('.wm-index'),
+                textInput: entryDiv.querySelector('.wm-text'),
+                colorInput: entryDiv.querySelector('.wm-color'),
+                alphaInput: entryDiv.querySelector('.wm-alpha'),
+                alphaNum: entryDiv.querySelector('.wm-alpha-num'),
+                fontSelect: entryDiv.querySelector('.wm-font'),
+                boldCb: entryDiv.querySelector('.wm-bold'),
+                italicCb: entryDiv.querySelector('.wm-italic'),
+                xxCb: entryDiv.querySelector('.wm-xx'),
+                sizeInput: entryDiv.querySelector('.wm-size'),
+                sizeNum: entryDiv.querySelector('.wm-size-num'),
+                radioInput: entryDiv.querySelector('.wm-radio'),
+                radioNum: entryDiv.querySelector('.wm-radio-num'),
+                marginHorizonInput: entryDiv.querySelector('.wm-marginHorizon'),
+                marginHorizonNum: entryDiv.querySelector('.wm-marginHorizon-num'),
+                marginVerticalInput: entryDiv.querySelector('.wm-marginVertical'),
+                marginVerticalNum: entryDiv.querySelector('.wm-marginVertical-num'),
+                deleteBtn: entryDiv.querySelector('.wm-delete-btn')
+            };
+            wm._el = els;
+
+            // ===== 事件绑定 =====
+
+            // 文字
+            els.textInput.addEventListener('input', function () {
+                wm.text = this.value;
+                redrawAll();
+            });
+
+            // 颜色
+            els.colorInput.addEventListener('input', function () {
+                wm.color = this.value;
+                redrawAll();
+            });
+
+            // 不透明度
+            els.alphaInput.addEventListener('input', function () {
+                wm.alpha = parseFloat(this.value);
+                els.alphaNum.value = wm.alpha.toFixed(2);
+                redrawAll();
+            });
+            els.alphaNum.addEventListener('input', function () {
+                var v = parseFloat(this.value);
+                if (isNaN(v)) return;
+                v = Math.max(0, Math.min(1, v));
+                wm.alpha = v;
+                els.alphaInput.value = v;
+                redrawAll();
+            });
+
+            // 字体
+            els.fontSelect.addEventListener('change', function () {
+                wm.font = this.value;
+                redrawAll();
+            });
+
+            // 加粗
+            els.boldCb.addEventListener('change', function () {
+                wm.bold = this.checked;
+                redrawAll();
+            });
+
+            // 斜体
+            els.italicCb.addEventListener('change', function () {
+                wm.italic = this.checked;
+                redrawAll();
+            });
+
+            // 交错
+            els.xxCb.addEventListener('change', function () {
+                wm.xx = this.checked;
+                redrawAll();
+            });
+
+            // 字号
+            els.sizeInput.addEventListener('input', function () {
+                wm.size = parseFloat(this.value);
+                els.sizeNum.value = fmt(wm.size);
+                redrawAll();
+            });
+            els.sizeNum.addEventListener('input', function () {
+                var v = parseFloat(this.value);
+                if (isNaN(v)) return;
+                v = Math.max(0.1, Math.min(5, v));
+                wm.size = v;
+                els.sizeInput.value = v;
+                redrawAll();
+            });
+
+            // 角度
+            els.radioInput.addEventListener('input', function () {
+                wm.radio = parseInt(this.value);
+                els.radioNum.value = wm.radio;
+                redrawAll();
+            });
+            els.radioNum.addEventListener('input', function () {
+                var v = parseInt(this.value);
+                if (isNaN(v)) return;
+                v = Math.max(-180, Math.min(180, v));
+                wm.radio = v;
+                els.radioInput.value = v;
+                redrawAll();
+            });
+
+            // 左右间隔
+            els.marginHorizonInput.addEventListener('input', function () {
+                wm.marginHorizon = parseFloat(this.value);
+                els.marginHorizonNum.value = fmt(wm.marginHorizon);
+                redrawAll();
+            });
+            els.marginHorizonNum.addEventListener('input', function () {
+                var v = parseFloat(this.value);
+                if (isNaN(v)) return;
+                v = Math.max(-5, Math.min(12, v));
+                wm.marginHorizon = v;
+                els.marginHorizonInput.value = v;
+                redrawAll();
+            });
+
+            // 上下间隔
+            els.marginVerticalInput.addEventListener('input', function () {
+                wm.marginVertical = parseFloat(this.value);
+                els.marginVerticalNum.value = fmt(wm.marginVertical);
+                redrawAll();
+            });
+            els.marginVerticalNum.addEventListener('input', function () {
+                var v = parseFloat(this.value);
+                if (isNaN(v)) return;
+                v = Math.max(-5, Math.min(12, v));
+                wm.marginVertical = v;
+                els.marginVerticalInput.value = v;
+                redrawAll();
+            });
+
+            // 删除
+            els.deleteBtn.addEventListener('click', function () {
+                removeWatermark(wm.id);
+            });
+
+            return entryDiv;
+        }
+
+        // ===== 全局事件 =====
+
+        // 图片格式切换
+        var picTypeInputs = document.getElementsByClassName("pic-type");
+        for (var i = 0; i < picTypeInputs.length; i++) {
+            (function () {
+                var item = picTypeInputs[i];
+                item.addEventListener('change', function () {
+                    var picQuality = $("#pic-quality-div");
+                    picQuality.style.display = "none";
+                    if (item.checked) {
+                        picType = item.value;
+                        if ("image/webp" === item.value || "image/jpeg" === item.value) {
+                            picQuality.style.display = "";
+                        }
+                    }
+                });
+            })();
+        }
+
+        // 图片质量
+        (function () {
+            var el = $('#pic-quality');
+            var lbl = $('#label-pic-quality');
+            if (lbl) lbl.innerText = el.value;
+            el.addEventListener('input', function () {
+                if (lbl) lbl.innerText = el.value;
+            });
+        })();
+
+        // 图片选择
+        document.getElementById('image').addEventListener('change', function () {
+            var batchFileHandler = function (file) {
+                var type = file.type;
+                if (!['image/png', 'image/jpeg', 'image/webp'].includes(type)) {
+                    return alert('仅支持 png, jpg, webp 图片格式');
+                }
+                readFile(file);
+            };
+            [].slice.call(this.files).forEach(batchFileHandler);
+        });
+
+        // "添加水印" 按钮
+        document.getElementById('add-watermark').addEventListener('click', function () {
+            addWatermark();
+        });
+
+        // ===== 初始化默认水印 =====
+        watermarks.push(createWatermark({
+            text: '这里是水印文字',
+            color: '#000000',
+            alpha: 0.25,
+            font: 'Arial',
+            bold: true,
+            italic: false,
+            xx: false,
+            size: 0.8,
+            radio: -30,
+            marginHorizon: 3,
+            marginVertical: 3
+        }));
+        renderWatermarkEntry(watermarks[0]);
+
+        // 暴露到全局（供 HTML onclick）
+        window.downloadAllPic = downloadAllPic;
+
+    })();
+</script>
+</body>
+</html>
